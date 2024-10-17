@@ -17,9 +17,9 @@ import type {
 } from 'vite'
 import { ViteNodeRunner } from 'vite-node/client'
 import { ViteNodeServer } from 'vite-node/server'
-import { glob } from 'tinyglobby'
+import fg from 'fast-glob'
+import { deepMerge, nanoid } from '@vitest/utils'
 import type { Typechecker } from '../typecheck/typechecker'
-import { deepMerge, nanoid } from '../utils/base'
 import { setup } from '../api/setup'
 import type { ProvidedContext } from '../types/general'
 import type {
@@ -296,13 +296,14 @@ export class WorkspaceProject {
   }
 
   async globFiles(include: string[], exclude: string[], cwd: string) {
-    return glob(include, {
-      absolute: true,
+    const globOptions: fg.Options = {
       dot: true,
       cwd,
       ignore: exclude,
-      expandDirectories: false,
-    })
+    }
+
+    const files = await fg(include, globOptions)
+    return files.map(file => resolve(cwd, file))
   }
 
   async isTargetFile(id: string, source?: string): Promise<boolean> {
